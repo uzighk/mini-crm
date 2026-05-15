@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, DragEvent } from "react";
+import { useState, useEffect, useRef, DragEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, DotsSixVertical, Timer, PaintBucket, Check } from "@phosphor-icons/react";
 import { Deal, Contact, STAGES, StageId } from "@/lib/types";
@@ -17,14 +17,14 @@ interface Props {
 }
 
 const BG_PRESETS = [
-  { id: "violet",    label: "Violeta",    value: "linear-gradient(135deg, #1e1b4b 0%, #4c1d95 60%, #1e1b4b 100%)" },
-  { id: "ocean",     label: "Oceano",     value: "linear-gradient(135deg, #0c4a6e 0%, #0369a1 50%, #0ea5e9 100%)" },
-  { id: "forest",    label: "Floresta",   value: "linear-gradient(135deg, #052e16 0%, #14532d 60%, #052e16 100%)" },
-  { id: "sunset",    label: "Pôr do sol", value: "linear-gradient(135deg, #450a0a 0%, #7c2d12 45%, #1c1917 100%)" },
-  { id: "rose",      label: "Rosa",       value: "linear-gradient(135deg, #500724 0%, #9f1239 50%, #500724 100%)" },
-  { id: "midnight",  label: "Meia-noite", value: "linear-gradient(160deg, #09090b 0%, #18181b 100%)" },
-  { id: "aurora",    label: "Aurora",     value: "linear-gradient(135deg, #134e4a 0%, #0f766e 40%, #1e1b4b 100%)" },
-  { id: "slate",     label: "Slate",      value: "linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%)" },
+  { id: "white",     label: "Branco",     value: "#f8fafc",                                                          dark: false },
+  { id: "violet",    label: "Violeta",    value: "linear-gradient(135deg, #1e1b4b 0%, #4c1d95 60%, #1e1b4b 100%)",  dark: true  },
+  { id: "ocean",     label: "Oceano",     value: "linear-gradient(135deg, #0c4a6e 0%, #0369a1 50%, #0ea5e9 100%)",  dark: true  },
+  { id: "forest",    label: "Floresta",   value: "linear-gradient(135deg, #052e16 0%, #14532d 60%, #052e16 100%)",  dark: true  },
+  { id: "sunset",    label: "Pôr do sol", value: "linear-gradient(135deg, #450a0a 0%, #7c2d12 45%, #1c1917 100%)",  dark: true  },
+  { id: "rose",      label: "Rosa",       value: "linear-gradient(135deg, #500724 0%, #9f1239 50%, #500724 100%)",  dark: true  },
+  { id: "aurora",    label: "Aurora",     value: "linear-gradient(135deg, #134e4a 0%, #0f766e 40%, #1e1b4b 100%)",  dark: true  },
+  { id: "midnight",  label: "Meia-noite", value: "linear-gradient(160deg, #09090b 0%, #18181b 100%)",               dark: true  },
 ];
 
 function fmtVal(v: number) {
@@ -32,21 +32,32 @@ function fmtVal(v: number) {
   return `R$ ${v}`;
 }
 
-function BgPicker({ current, onChange }: { current: string; onChange: (id: string) => void }) {
+function BgPicker({ current, isDark, onChange }: { current: string; isDark: boolean; onChange: (id: string) => void }) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [popPos, setPopPos] = useState({ top: 0, right: 0 });
+
+  function handleOpen() {
+    if (btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPopPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+    }
+    setOpen((o) => !o);
+  }
+
   return (
-    <div style={{ position: "relative" }}>
+    <div>
       <button
-        onClick={() => setOpen((o) => !o)}
-        title="Mudar fundo"
+        ref={btnRef}
+        onClick={handleOpen}
         style={{
           display: "flex", alignItems: "center", gap: 6,
           padding: "7px 14px",
-          background: "rgba(255,255,255,0.12)",
-          backdropFilter: "blur(12px)",
-          border: "1px solid rgba(255,255,255,0.18)",
+          background: isDark ? "rgba(255,255,255,0.12)" : "transparent",
+          backdropFilter: isDark ? "blur(12px)" : "none",
+          border: isDark ? "1px solid rgba(255,255,255,0.18)" : "1px solid #e2e8f0",
           borderRadius: 20,
-          color: "rgba(255,255,255,0.8)",
+          color: isDark ? "rgba(255,255,255,0.8)" : "#64748b",
           fontSize: 12, fontWeight: 500,
           cursor: "pointer",
           transition: "all 0.15s",
@@ -59,19 +70,21 @@ function BgPicker({ current, onChange }: { current: string; onChange: (id: strin
       <AnimatePresence>
         {open && (
           <>
-            <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 10 }} />
+            <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 998 }} />
             <motion.div
               initial={{ opacity: 0, y: 6, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 6, scale: 0.97 }}
               transition={{ duration: 0.14 }}
               style={{
-                position: "absolute", top: "calc(100% + 8px)", right: 0,
-                background: "rgba(15,23,42,0.85)",
+                position: "fixed",
+                top: popPos.top,
+                right: popPos.right,
+                background: "rgba(15,23,42,0.92)",
                 backdropFilter: "blur(20px)",
                 border: "1px solid rgba(255,255,255,0.12)",
                 borderRadius: 20,
-                padding: 14, width: 220, zIndex: 20,
+                padding: 14, width: 228, zIndex: 999,
                 boxShadow: "0 16px 40px rgba(0,0,0,0.4)",
               }}
             >
@@ -87,7 +100,7 @@ function BgPicker({ current, onChange }: { current: string; onChange: (id: strin
                       position: "relative",
                       height: 44, borderRadius: 12,
                       background: bg.value,
-                      border: current === bg.id ? "2px solid rgba(255,255,255,0.8)" : "2px solid transparent",
+                      border: current === bg.id ? "2px solid #6366f1" : "2px solid rgba(255,255,255,0.08)",
                       cursor: "pointer",
                       overflow: "hidden",
                       transition: "all 0.12s",
@@ -95,10 +108,10 @@ function BgPicker({ current, onChange }: { current: string; onChange: (id: strin
                   >
                     {current === bg.id && (
                       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <Check size={14} color="#fff" weight="bold" />
+                        <Check size={14} color={bg.dark ? "#fff" : "#6366f1"} weight="bold" />
                       </div>
                     )}
-                    <div style={{ position: "absolute", bottom: 4, left: 0, right: 0, textAlign: "center", fontSize: 9, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
+                    <div style={{ position: "absolute", bottom: 4, left: 0, right: 0, textAlign: "center", fontSize: 9, color: bg.dark ? "rgba(255,255,255,0.7)" : "#64748b", fontWeight: 500 }}>
                       {bg.label}
                     </div>
                   </button>
@@ -141,7 +154,7 @@ function DealCard({
           WebkitBackdropFilter: "blur(16px) saturate(180%)",
           border: "1px solid rgba(255,255,255,0.55)",
           borderRadius: 20,
-          padding: "13px 13px 11px",
+          padding: "16px 16px 14px",
           cursor: "grab",
           marginBottom: 8,
           userSelect: "none",
@@ -197,11 +210,12 @@ function DealCard({
 }
 
 function Column({
-  stage, deals, onDragStart, onDrop, onCardClick, onAdd,
+  stage, deals, isDark, onDragStart, onDrop, onCardClick, onAdd,
 }: {
   stage: typeof STAGES[0];
   deals: Deal[];
   contacts: Contact[];
+  isDark: boolean;
   onDragStart: (e: DragEvent, id: string) => void;
   onDrop: (stage: StageId) => void;
   onCardClick: (deal: Deal) => void;
@@ -210,34 +224,44 @@ function Column({
   const [active, setActive] = useState(false);
   const totalValue = deals.reduce((s, d) => s + d.value, 0);
 
+  const hdrBg    = isDark ? "rgba(255,255,255,0.08)" : "#f1f5f9";
+  const hdrBdr   = isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #e2e8f0";
+  const hdrText  = isDark ? "rgba(255,255,255,0.75)" : "#334155";
+  const hdrCount = isDark ? "rgba(255,255,255,0.4)" : "#94a3b8";
+  const hdrCountBg = isDark ? "rgba(255,255,255,0.08)" : "#e2e8f0";
+  const hdrVal   = isDark ? "rgba(255,255,255,0.4)" : "#94a3b8";
+
+  const btnColor  = isDark ? "rgba(255,255,255,0.35)" : "#94a3b8";
+  const btnBdr    = isDark ? "1px dashed rgba(255,255,255,0.18)" : "1px dashed #cbd5e1";
+  const btnBg     = isDark ? "rgba(255,255,255,0.04)" : "transparent";
+  const btnHoverColor = isDark ? "rgba(255,255,255,0.8)" : "#475569";
+  const btnHoverBg    = isDark ? "rgba(255,255,255,0.1)" : "#f1f5f9";
+  const btnHoverBdr   = isDark ? "rgba(255,255,255,0.35)" : "#94a3b8";
+
   return (
     <div style={{ width: 256, minWidth: 256, display: "flex", flexDirection: "column", height: "100%" }}>
-      {/* Glass column header */}
+      {/* Column header */}
       <div style={{
         marginBottom: 10,
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        background: "rgba(255,255,255,0.08)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        border: "1px solid rgba(255,255,255,0.12)",
+        background: hdrBg,
+        backdropFilter: isDark ? "blur(12px)" : "none",
+        WebkitBackdropFilter: isDark ? "blur(12px)" : "none",
+        border: hdrBdr,
         borderRadius: 14,
         padding: "8px 12px",
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: stage.color, flexShrink: 0, boxShadow: `0 0 6px ${stage.color}` }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.75)", letterSpacing: "0.01em" }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: stage.color, flexShrink: 0, boxShadow: isDark ? `0 0 6px ${stage.color}` : "none" }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: hdrText, letterSpacing: "0.01em" }}>
             {stage.label}
           </span>
-          <span style={{
-            fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)",
-            background: "rgba(255,255,255,0.08)",
-            borderRadius: 10, padding: "1px 6px",
-          }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: hdrCount, background: hdrCountBg, borderRadius: 10, padding: "1px 6px" }}>
             {deals.length}
           </span>
         </div>
         {totalValue > 0 && (
-          <span style={{ fontSize: 10, fontWeight: 500, color: "rgba(255,255,255,0.4)" }}>{fmtVal(totalValue)}</span>
+          <span style={{ fontSize: 10, fontWeight: 500, color: hdrVal }}>{fmtVal(totalValue)}</span>
         )}
       </div>
 
@@ -249,8 +273,12 @@ function Column({
         style={{
           flex: 1, overflowY: "auto", padding: "3px 3px 4px",
           borderRadius: 24,
-          border: active ? `1.5px dashed rgba(255,255,255,0.4)` : "1.5px dashed transparent",
-          background: active ? "rgba(255,255,255,0.05)" : "transparent",
+          border: active
+            ? `1.5px dashed ${isDark ? "rgba(255,255,255,0.4)" : "#6366f1"}`
+            : "1.5px dashed transparent",
+          background: active
+            ? (isDark ? "rgba(255,255,255,0.05)" : "rgba(99,102,241,0.04)")
+            : "transparent",
           transition: "all 0.15s",
         }}
       >
@@ -266,24 +294,23 @@ function Column({
             display: "flex", alignItems: "center", gap: 6,
             padding: "8px 12px",
             borderRadius: 14,
-            border: "1px dashed rgba(255,255,255,0.18)",
-            background: "rgba(255,255,255,0.04)",
-            color: "rgba(255,255,255,0.35)",
+            border: btnBdr,
+            background: btnBg,
+            color: btnColor,
             fontSize: 11, cursor: "pointer", width: "100%",
             transition: "all 0.15s",
-            backdropFilter: "blur(8px)",
           }}
           onMouseEnter={(e) => {
             const b = e.currentTarget;
-            b.style.color = "rgba(255,255,255,0.8)";
-            b.style.background = "rgba(255,255,255,0.1)";
-            b.style.borderColor = "rgba(255,255,255,0.35)";
+            b.style.color = btnHoverColor;
+            b.style.background = btnHoverBg;
+            b.style.borderColor = btnHoverBdr;
           }}
           onMouseLeave={(e) => {
             const b = e.currentTarget;
-            b.style.color = "rgba(255,255,255,0.35)";
-            b.style.background = "rgba(255,255,255,0.04)";
-            b.style.borderColor = "rgba(255,255,255,0.18)";
+            b.style.color = btnColor;
+            b.style.background = btnBg;
+            b.style.borderColor = isDark ? "rgba(255,255,255,0.18)" : "#cbd5e1";
           }}
         >
           <Plus size={12} weight="bold" />
@@ -299,7 +326,7 @@ export function Pipeline({ deals, contacts, onMove, onUpdate, onDelete, onAdd }:
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
   const [newDealStage, setNewDealStage] = useState<StageId>("leads");
   const [showNew, setShowNew] = useState(false);
-  const [bgId, setBgId] = useState("violet");
+  const [bgId, setBgId] = useState("white");
 
   useEffect(() => {
     const saved = localStorage.getItem("crm_bg");
@@ -311,7 +338,9 @@ export function Pipeline({ deals, contacts, onMove, onUpdate, onDelete, onAdd }:
     localStorage.setItem("crm_bg", id);
   }
 
-  const bg = BG_PRESETS.find((b) => b.id === bgId)?.value ?? BG_PRESETS[0].value;
+  const preset = BG_PRESETS.find((b) => b.id === bgId) ?? BG_PRESETS[0];
+  const bg = preset.value;
+  const isDark = preset.dark;
 
   function handleDragStart(e: DragEvent, id: string) {
     e.dataTransfer.setData("dealId", id);
@@ -328,42 +357,40 @@ export function Pipeline({ deals, contacts, onMove, onUpdate, onDelete, onAdd }:
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: bg, transition: "background 0.5s ease" }}>
-      {/* Glass top bar */}
+      {/* Top bar */}
       <div style={{
         padding: "16px 24px",
         display: "flex", alignItems: "center", justifyContent: "space-between",
         flexShrink: 0,
-        background: "rgba(0,0,0,0.25)",
-        backdropFilter: "blur(20px) saturate(180%)",
-        WebkitBackdropFilter: "blur(20px) saturate(180%)",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        background: isDark ? "rgba(0,0,0,0.25)" : "#ffffff",
+        borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #e2e8f0",
+        boxShadow: isDark ? "none" : "0 1px 3px rgba(0,0,0,0.06)",
       }}>
         <div>
-          <h1 style={{ fontSize: 17, fontWeight: 700, color: "#fff", letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontSize: 17, fontWeight: 700, color: isDark ? "#fff" : "#0f172a", letterSpacing: "-0.02em" }}>
             Pipeline de Vendas
           </h1>
-          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>
+          <p style={{ fontSize: 12, color: isDark ? "rgba(255,255,255,0.45)" : "#94a3b8", marginTop: 2 }}>
             {deals.length} negócios &middot; {fmtVal(totalPipeline)} em aberto
           </p>
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <BgPicker current={bgId} onChange={handleBgChange} />
+          <BgPicker current={bgId} isDark={isDark} onChange={handleBgChange} />
           <button
             onClick={() => { setNewDealStage("leads"); setShowNew(true); }}
             style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "9px 18px",
-              background: "rgba(255,255,255,0.15)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
+              background: isDark ? "rgba(255,255,255,0.15)" : "#6366f1",
               color: "#fff",
-              border: "1px solid rgba(255,255,255,0.25)",
+              border: isDark ? "1px solid rgba(255,255,255,0.25)" : "none",
               borderRadius: 20,
               fontSize: 13, fontWeight: 600, cursor: "pointer",
               transition: "all 0.15s",
+              boxShadow: isDark ? "none" : "0 4px 14px rgba(99,102,241,0.3)",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.25)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.15)"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.25)" : "#4f46e5"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.15)" : "#6366f1"; }}
           >
             <Plus size={14} weight="bold" />
             Novo negócio
@@ -382,6 +409,7 @@ export function Pipeline({ deals, contacts, onMove, onUpdate, onDelete, onAdd }:
             stage={stage}
             deals={deals.filter((d) => d.stage === stage.id)}
             contacts={contacts}
+            isDark={isDark}
             onDragStart={handleDragStart}
             onDrop={handleDrop}
             onCardClick={setSelectedDeal}
