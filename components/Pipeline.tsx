@@ -139,13 +139,13 @@ function Column({
         )}
       </div>
 
-      {/* Drop zone */}
+      {/* Drop zone + add button inline */}
       <div
         onDragOver={(e) => { e.preventDefault(); setActive(true); }}
         onDragLeave={() => setActive(false)}
         onDrop={(e) => { e.preventDefault(); setActive(false); onDrop(stage.id); }}
         style={{
-          flex: 1, overflowY: "auto", padding: "3px 3px 8px",
+          flex: 1, overflowY: "auto", padding: "3px 3px 4px",
           borderRadius: 10,
           border: `1.5px dashed ${active ? stage.color + "80" : "transparent"}`,
           background: active ? `${stage.color}06` : "transparent",
@@ -156,34 +156,34 @@ function Column({
           <DealCard key={deal.id} deal={deal} onClick={() => onCardClick(deal)} onDragStart={onDragStart} />
         ))}
         <div data-before="-1" data-column={stage.id} style={{ height: 2, opacity: 0 }} />
-      </div>
 
-      {/* Add button */}
-      <button
-        onClick={onAdd}
-        style={{
-          marginTop: 6,
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "7px 10px",
-          borderRadius: 8,
-          border: "1.5px dashed #e2e8f0",
-          background: "transparent",
-          color: "#cbd5e1",
-          fontSize: 11, cursor: "pointer", width: "100%",
-          transition: "all 0.12s",
-        }}
-        onMouseEnter={(e) => {
-          const b = e.currentTarget;
-          b.style.color = "#6366f1"; b.style.borderColor = "#c7d2fe"; b.style.background = "#eef2ff";
-        }}
-        onMouseLeave={(e) => {
-          const b = e.currentTarget;
-          b.style.color = "#cbd5e1"; b.style.borderColor = "#e2e8f0"; b.style.background = "transparent";
-        }}
-      >
-        <Plus size={12} weight="bold" />
-        Novo negócio
-      </button>
+        {/* Add button — logo abaixo dos cards */}
+        <button
+          onClick={onAdd}
+          style={{
+            marginTop: 4,
+            display: "flex", alignItems: "center", gap: 6,
+            padding: "7px 10px",
+            borderRadius: 8,
+            border: "none",
+            background: "transparent",
+            color: "#cbd5e1",
+            fontSize: 11, cursor: "pointer", width: "100%",
+            transition: "all 0.12s",
+          }}
+          onMouseEnter={(e) => {
+            const b = e.currentTarget;
+            b.style.color = "#6366f1"; b.style.background = "#eef2ff";
+          }}
+          onMouseLeave={(e) => {
+            const b = e.currentTarget;
+            b.style.color = "#cbd5e1"; b.style.background = "transparent";
+          }}
+        >
+          <Plus size={12} weight="bold" />
+          Novo negócio
+        </button>
+      </div>
     </div>
   );
 }
