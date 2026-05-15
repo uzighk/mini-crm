@@ -2,7 +2,7 @@
 
 import { useState, DragEvent } from "react";
 import { motion } from "framer-motion";
-import { Plus, GripVertical } from "lucide-react";
+import { Plus, DotsSixVertical, Timer } from "@phosphor-icons/react";
 import { Deal, Contact, STAGES, StageId } from "@/lib/types";
 import { DealModal } from "./DealModal";
 import { NewDealModal } from "./NewDealModal";
@@ -21,13 +21,6 @@ function fmtVal(v: number) {
   return `R$ ${v}`;
 }
 
-function daysBadge(updatedAt: string) {
-  const d = Math.floor((Date.now() - new Date(updatedAt).getTime()) / 86400000);
-  if (d === 0) return null;
-  const color = d > 7 ? "#ef4444" : d > 3 ? "#f97316" : "#737373";
-  return <span style={{ fontSize: 10, color, fontWeight: 500 }}>{d}d</span>;
-}
-
 function DealCard({
   deal,
   onClick,
@@ -37,12 +30,15 @@ function DealCard({
   onClick: () => void;
   onDragStart: (e: DragEvent, id: string) => void;
 }) {
+  const days = Math.floor((Date.now() - new Date(deal.updatedAt).getTime()) / 86400000);
+  const daysColor = days > 7 ? "#ef4444" : days > 3 ? "#f97316" : "#94a3b8";
+
   return (
     <>
       <div
         data-before={deal.id}
         data-column={deal.stage}
-        style={{ height: 2, background: "#eab308", opacity: 0, margin: "1px 0", borderRadius: 2, transition: "opacity 0.1s" }}
+        style={{ height: 2, background: "#6366f1", opacity: 0, margin: "1px 0", borderRadius: 2, transition: "opacity 0.1s" }}
       />
       <motion.div
         layout
@@ -51,44 +47,51 @@ function DealCard({
         onDragStart={(e) => onDragStart(e as unknown as DragEvent, deal.id)}
         onClick={onClick}
         style={{
-          background: "#161616",
-          border: "1px solid #1f1f1f",
+          background: "#ffffff",
+          border: "1px solid #e2e8f0",
           borderRadius: 10,
           padding: "12px 12px 10px",
           cursor: "grab",
           marginBottom: 6,
           userSelect: "none",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
         }}
-        whileHover={{ borderColor: "#2a2a2a", background: "#1a1a1a" }}
-        transition={{ duration: 0.1 }}
+        whileHover={{ borderColor: "#c7d2fe", boxShadow: "0 4px 12px rgba(99,102,241,0.08)" }}
+        transition={{ duration: 0.12 }}
       >
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 6 }}>
-          <span style={{ fontSize: 12, fontWeight: 500, color: "#e5e5e5", lineHeight: 1.4, flex: 1 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 500, color: "#1e293b", lineHeight: 1.4, flex: 1 }}>
             {deal.title}
           </span>
-          <GripVertical size={12} color="#333" style={{ flexShrink: 0, marginLeft: 4, marginTop: 2 }} />
+          <DotsSixVertical size={14} color="#cbd5e1" style={{ flexShrink: 0, marginLeft: 4, marginTop: 1 }} />
         </div>
 
         {deal.company && (
-          <div style={{ fontSize: 11, color: "#525252", marginBottom: 8 }}>{deal.company}</div>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 8 }}>{deal.company}</div>
         )}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           {deal.value > 0 ? (
-            <span style={{ fontSize: 11, fontWeight: 600, color: "#eab308" }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#6366f1" }}>
               {fmtVal(deal.value)}
             </span>
           ) : (
-            <span style={{ fontSize: 11, color: "#333" }}>—</span>
+            <span style={{ fontSize: 11, color: "#e2e8f0" }}>—</span>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {daysBadge(deal.updatedAt)}
+            {days > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                <Timer size={11} color={daysColor} />
+                <span style={{ fontSize: 10, color: daysColor, fontWeight: 500 }}>{days}d</span>
+              </div>
+            )}
             {deal.owner && (
               <div style={{
-                width: 20, height: 20, borderRadius: "50%",
-                background: "#222", border: "1px solid #2a2a2a",
+                width: 22, height: 22, borderRadius: "50%",
+                background: "#eef2ff",
+                border: "1.5px solid #c7d2fe",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 9, fontWeight: 700, color: "#eab308",
+                fontSize: 9, fontWeight: 700, color: "#6366f1",
               }}>
                 {deal.owner.charAt(0).toUpperCase()}
               </div>
@@ -101,13 +104,7 @@ function DealCard({
 }
 
 function Column({
-  stage,
-  deals,
-  contacts,
-  onDragStart,
-  onDrop,
-  onCardClick,
-  onAdd,
+  stage, deals, onDragStart, onDrop, onCardClick, onAdd,
 }: {
   stage: typeof STAGES[0];
   deals: Deal[];
@@ -118,107 +115,73 @@ function Column({
   onAdd: () => void;
 }) {
   const [active, setActive] = useState(false);
-
   const totalValue = deals.reduce((s, d) => s + d.value, 0);
 
-  function handleDragOver(e: DragEvent) {
-    e.preventDefault();
-    setActive(true);
-  }
-
-  function handleDragLeave() {
-    setActive(false);
-  }
-
-  function handleDrop(e: DragEvent) {
-    e.preventDefault();
-    setActive(false);
-    onDrop(stage.id);
-  }
-
   return (
-    <div
-      style={{ width: 240, minWidth: 240, display: "flex", flexDirection: "column", height: "100%" }}
-    >
-      {/* Column header */}
-      <div style={{ marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", paddingRight: 2 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 8, height: 8, borderRadius: "50%", background: stage.color }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: "#a3a3a3", letterSpacing: "0.02em" }}>
+    <div style={{ width: 252, minWidth: 252, display: "flex", flexDirection: "column", height: "100%" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: stage.color, flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#475569", letterSpacing: "0.01em" }}>
             {stage.label}
           </span>
           <span style={{
-            fontSize: 10, fontWeight: 600, color: "#404040",
-            background: "#1a1a1a", border: "1px solid #222",
+            fontSize: 10, fontWeight: 600, color: "#94a3b8",
+            background: "#f1f5f9", border: "1px solid #e2e8f0",
             borderRadius: 10, padding: "1px 6px",
           }}>
             {deals.length}
           </span>
         </div>
         {totalValue > 0 && (
-          <span style={{ fontSize: 10, color: "#525252" }}>{fmtVal(totalValue)}</span>
+          <span style={{ fontSize: 10, fontWeight: 500, color: "#94a3b8" }}>{fmtVal(totalValue)}</span>
         )}
       </div>
 
       {/* Drop zone */}
       <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
+        onDragOver={(e) => { e.preventDefault(); setActive(true); }}
+        onDragLeave={() => setActive(false)}
+        onDrop={(e) => { e.preventDefault(); setActive(false); onDrop(stage.id); }}
         style={{
-          flex: 1,
-          overflowY: "auto",
-          padding: "4px 4px 8px",
+          flex: 1, overflowY: "auto", padding: "3px 3px 8px",
           borderRadius: 10,
-          border: `1px dashed ${active ? stage.color + "60" : "transparent"}`,
-          background: active ? `${stage.color}08` : "transparent",
+          border: `1.5px dashed ${active ? stage.color + "80" : "transparent"}`,
+          background: active ? `${stage.color}06` : "transparent",
           transition: "all 0.15s",
-          minHeight: 60,
         }}
       >
         {deals.map((deal) => (
-          <DealCard
-            key={deal.id}
-            deal={deal}
-            onClick={() => onCardClick(deal)}
-            onDragStart={onDragStart}
-          />
+          <DealCard key={deal.id} deal={deal} onClick={() => onCardClick(deal)} onDragStart={onDragStart} />
         ))}
-        <div
-          data-before="-1"
-          data-column={stage.id}
-          style={{ height: 2, opacity: 0 }}
-        />
+        <div data-before="-1" data-column={stage.id} style={{ height: 2, opacity: 0 }} />
       </div>
 
       {/* Add button */}
       <button
         onClick={onAdd}
         style={{
-          marginTop: 8,
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
+          marginTop: 6,
+          display: "flex", alignItems: "center", gap: 6,
           padding: "7px 10px",
           borderRadius: 8,
-          border: "1px dashed #222",
+          border: "1.5px dashed #e2e8f0",
           background: "transparent",
-          color: "#404040",
-          fontSize: 11,
-          cursor: "pointer",
-          width: "100%",
+          color: "#cbd5e1",
+          fontSize: 11, cursor: "pointer", width: "100%",
           transition: "all 0.12s",
         }}
         onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.color = "#737373";
-          (e.currentTarget as HTMLButtonElement).style.borderColor = "#2a2a2a";
+          const b = e.currentTarget;
+          b.style.color = "#6366f1"; b.style.borderColor = "#c7d2fe"; b.style.background = "#eef2ff";
         }}
         onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.color = "#404040";
-          (e.currentTarget as HTMLButtonElement).style.borderColor = "#222";
+          const b = e.currentTarget;
+          b.style.color = "#cbd5e1"; b.style.borderColor = "#e2e8f0"; b.style.background = "transparent";
         }}
       >
-        <Plus size={12} />
+        <Plus size={12} weight="bold" />
         Novo negócio
       </button>
     </div>
@@ -237,10 +200,7 @@ export function Pipeline({ deals, contacts, onMove, onUpdate, onDelete, onAdd }:
   }
 
   function handleDrop(stage: StageId) {
-    if (draggingId) {
-      onMove(draggingId, stage);
-      setDraggingId(null);
-    }
+    if (draggingId) { onMove(draggingId, stage); setDraggingId(null); }
   }
 
   const totalPipeline = deals
@@ -248,53 +208,44 @@ export function Pipeline({ deals, contacts, onMove, onUpdate, onDelete, onAdd }:
     .reduce((s, d) => s + d.value, 0);
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden", background: "#f8fafc" }}>
       {/* Top bar */}
       <div style={{
-        padding: "20px 28px",
-        borderBottom: "1px solid #1a1a1a",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        flexShrink: 0,
+        padding: "18px 28px",
+        borderBottom: "1px solid #e2e8f0",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        flexShrink: 0, background: "#ffffff",
       }}>
         <div>
-          <h1 style={{ fontSize: 18, fontWeight: 700, color: "#f5f5f5", letterSpacing: "-0.03em" }}>
+          <h1 style={{ fontSize: 17, fontWeight: 700, color: "#0f172a", letterSpacing: "-0.02em" }}>
             Pipeline de Vendas
           </h1>
-          <p style={{ fontSize: 12, color: "#525252", marginTop: 2 }}>
-            {deals.length} negócios · {fmtVal(totalPipeline)} em aberto
+          <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
+            {deals.length} negócios &middot; {fmtVal(totalPipeline)} em aberto
           </p>
         </div>
         <button
           onClick={() => { setNewDealStage("leads"); setShowNew(true); }}
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
+            display: "flex", alignItems: "center", gap: 6,
             padding: "9px 18px",
-            background: "#eab308",
-            color: "#000",
-            border: "none",
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
+            background: "#6366f1",
+            color: "#fff",
+            border: "none", borderRadius: 8,
+            fontSize: 13, fontWeight: 600, cursor: "pointer",
+            boxShadow: "0 4px 14px rgba(99,102,241,0.3)",
+            transition: "all 0.15s",
           }}
         >
-          <Plus size={14} strokeWidth={2.5} />
+          <Plus size={14} weight="bold" />
           Novo negócio
         </button>
       </div>
 
       {/* Board */}
       <div style={{
-        flex: 1,
-        overflowX: "auto",
-        overflowY: "hidden",
-        padding: "24px 28px",
-        display: "flex",
-        gap: 16,
+        flex: 1, overflowX: "auto", overflowY: "hidden",
+        padding: "22px 28px", display: "flex", gap: 14,
       }}>
         {STAGES.map((stage) => (
           <Column
@@ -317,7 +268,6 @@ export function Pipeline({ deals, contacts, onMove, onUpdate, onDelete, onAdd }:
         onSave={onUpdate}
         onDelete={onDelete}
       />
-
       <NewDealModal
         open={showNew}
         defaultStage={newDealStage}
